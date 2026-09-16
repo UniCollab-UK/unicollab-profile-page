@@ -86,10 +86,11 @@ h2{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
 .folio-item p{font-size:13.5px;color:var(--ink-2);white-space:pre-wrap;}
 
 .side-links{display:flex;flex-direction:column;gap:2px;}
-.side-links a{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid var(--line);font-size:14px;text-decoration:none;}
-.side-links a:last-child{border-bottom:none;}
+.side-links a,.side-links .row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid var(--line);font-size:14px;text-decoration:none;}
+.side-links a:last-child,.side-links .row:last-child{border-bottom:none;}
 .side-links .k{color:var(--ink-3);font-weight:600;font-size:12.5px;white-space:nowrap;}
 .side-links .v{color:var(--navy);font-weight:600;text-align:right;word-break:break-all;}
+.side-links .v.empty-v{color:var(--ink-3);font-weight:500;}
 .side-links a:hover .v{text-decoration:underline;}
 
 .verify{background:#fff;border-radius:16px;padding:20px 22px;border-left:4px solid var(--ice);box-shadow:0 1px 3px rgba(30,39,97,.06);font-size:13.5px;color:var(--ink-2);margin-top:20px;}
@@ -226,13 +227,26 @@ h2{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
       : '';
 
     var validLinks = (p.links || []).filter(function (l) { return l && l.url; });
+    var CANONICAL_LINK_LABELS = ['Email', 'Website', 'LinkedIn', 'GitHub'];
+    var usedLinks = [];
+    var canonicalRowsHtml = CANONICAL_LINK_LABELS.map(function (label) {
+      var match = validLinks.find(function (l) {
+        return (l.label || '').trim().toLowerCase() === label.toLowerCase();
+      });
+      if (match) {
+        usedLinks.push(match);
+        var href = normalizeUrl(match.url);
+        return '<a href="' + esc(href) + '" target="_blank" rel="noopener noreferrer"><span class="k">' + esc(label) + '</span><span class="v">' + esc(match.url) + '</span></a>';
+      }
+      return '<div class="row"><span class="k">' + esc(label) + '</span><span class="v empty-v">Not added</span></div>';
+    }).join('');
+    var extraLinks = validLinks.filter(function (l) { return usedLinks.indexOf(l) === -1; });
+    var extraRowsHtml = extraLinks.map(function (l) {
+      var href = normalizeUrl(l.url);
+      return '<a href="' + esc(href) + '" target="_blank" rel="noopener noreferrer"><span class="k">' + esc(l.label || 'Link') + '</span><span class="v">' + esc(l.url) + '</span></a>';
+    }).join('');
     var linksHtml = '<div class="card"><h2>Links &amp; contact</h2>'
-      + (validLinks.length
-          ? '<div class="side-links">' + validLinks.map(function (l) {
-              var href = normalizeUrl(l.url);
-              return '<a href="' + esc(href) + '" target="_blank" rel="noopener noreferrer"><span class="k">' + esc(l.label || 'Link') + '</span><span class="v">' + esc(l.url) + '</span></a>';
-            }).join('') + '</div>'
-          : '<p class="empty">No links added yet.</p>')
+      + '<div class="side-links">' + canonicalRowsHtml + extraRowsHtml + '</div>'
       + '</div>';
 
     var projectsHtml = '<div class="card"><h2>Projects</h2>'
