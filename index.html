@@ -293,7 +293,7 @@ h2{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
   if (!userId) {
     setState('Missing profile link — check the link and try again.');
   } else {
-    fetch(FUNCTION_URL + '?u=' + encodeURIComponent(userId))
+    fetch(FUNCTION_URL + '?u=' + encodeURIComponent(userId) + '&_=' + Date.now(), { cache: 'no-store' })
       .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
       .then(function (result) {
         if (!result.ok || !result.data || !result.data.success) {
