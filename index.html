@@ -84,7 +84,17 @@ h2{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
 .folio-body{padding:14px 18px 16px;}
 .fh{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:5px;}
 .folio-item h4{font-size:15.5px;font-weight:700;}
-.folio-item p{font-size:13.5px;color:var(--ink-2);white-space:pre-wrap;}
+.folio-item p{font-size:13.5px;color:var(--ink-2);white-space:pre-wrap;margin-bottom:8px;}
+.tag{flex:none;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);white-space:nowrap;}
+.folio-item .url{font-size:13px;color:var(--navy);font-weight:600;word-break:break-all;background:none;border:none;padding:0;font-family:inherit;cursor:pointer;text-align:left;}
+.folio-thumb{position:relative;cursor:pointer;}
+.lightbox{position:fixed;inset:0;z-index:100;background:rgba(17,17,17,.9);display:flex;align-items:center;justify-content:center;padding:24px;}
+.lightbox img{max-width:100%;max-height:100%;border-radius:8px;display:block;}
+.lightbox-close{position:absolute;top:20px;right:20px;width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:20px;cursor:pointer;}
+.lightbox-nav{position:absolute;top:50%;transform:translateY(-50%);width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:20px;cursor:pointer;}
+.lightbox-prev{left:20px;}
+.lightbox-next{right:20px;}
+.lightbox-count{position:absolute;bottom:20px;left:0;right:0;text-align:center;color:#fff;font-size:13px;}
 
 .side-links{display:flex;flex-direction:column;gap:2px;}
 .side-links a,.side-links .row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid var(--line);font-size:14px;text-decoration:none;}
@@ -128,6 +138,7 @@ h2{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
   <div class="wrap" id="app">
     <div class="state" id="state">Loading…</div>
   </div>
+  <div class="lightbox" id="lightbox" hidden></div>
 
 <script>
   var FUNCTION_URL = 'https://vqkhzpydmltzwtanvrkp.supabase.co/functions/v1/public-profile';
@@ -289,15 +300,33 @@ h2{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
           : '<p class="empty">No posted projects yet.</p>')
       + '</div>';
 
+    window.portfolioGalleries = portfolio.map(function (item) { return item.images || []; });
+
+    function hostLabel(url) {
+      try {
+        var host = new URL(/^https?:\/\//i.test(url) ? url : 'https://' + url).hostname;
+        return host.replace(/^www\./, '');
+      } catch (_) { return url; }
+    }
+
     var portfolioHtml = '<div class="card"><h2>Portfolio</h2>'
       + (portfolio.length
-          ? '<div class="folio">' + portfolio.map(function (item) {
-              var cover = (item.images || [])[0];
+          ? '<div class="folio">' + portfolio.map(function (item, idx) {
+              var images = item.images || [];
+              var cover = images[0];
+              var isPdf = /\.pdf($|\?)/i.test(item.externalUrl || '');
+              var tag = item.externalUrl
+                ? (isPdf ? 'PDF' : 'Link')
+                : (images.length ? images.length + (images.length === 1 ? ' piece' : ' pieces') : '');
+              var urlRowHtml = item.externalUrl
+                ? '<a class="url" href="' + esc(normalizeUrl(item.externalUrl)) + '" target="_blank" rel="noopener noreferrer">' + esc(hostLabel(item.externalUrl)) + ' &rarr;</a>'
+                : (images.length ? '<button type="button" class="url" onclick="openLightbox(' + idx + ')">View pieces &rarr;</button>' : '');
               return '<div class="folio-item">'
-                + '<div class="folio-thumb">' + (cover ? '<img src="' + esc(cover) + '" alt="' + esc(item.title) + '">' : '') + '</div>'
+                + '<div class="folio-thumb"' + (images.length ? ' onclick="openLightbox(' + idx + ')"' : '') + '>' + (cover ? '<img src="' + esc(cover) + '" alt="' + esc(item.title) + '">' : '') + '</div>'
                 + '<div class="folio-body">'
-                + '<div class="fh"><h4>' + esc(item.title) + '</h4></div>'
+                + '<div class="fh"><h4>' + esc(item.title) + '</h4>' + (tag ? '<span class="tag">' + esc(tag) + '</span>' : '') + '</div>'
                 + (item.subtitle ? '<p>' + esc(item.subtitle) + '</p>' : '')
+                + urlRowHtml
                 + '</div></div>';
             }).join('') + '</div>'
           : '<p class="empty">No public portfolio pieces yet.</p>')
@@ -333,6 +362,38 @@ h2{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
       }
     });
   }
+
+  var lightboxIndex = 0;
+  var lightboxItem = -1;
+
+  function renderLightbox() {
+    var box = document.getElementById('lightbox');
+    var images = window.portfolioGalleries[lightboxItem] || [];
+    if (!box || !images.length) return;
+    box.innerHTML = '<button type="button" class="lightbox-close" onclick="closeLightbox()">&times;</button>'
+      + (images.length > 1 ? '<button type="button" class="lightbox-nav lightbox-prev" onclick="lightboxStep(-1)">&larr;</button>' : '')
+      + '<img src="' + esc(images[lightboxIndex]) + '">'
+      + (images.length > 1 ? '<button type="button" class="lightbox-nav lightbox-next" onclick="lightboxStep(1)">&rarr;</button>' : '')
+      + (images.length > 1 ? '<div class="lightbox-count">' + (lightboxIndex + 1) + ' / ' + images.length + '</div>' : '');
+  }
+
+  window.openLightbox = function (itemIdx) {
+    lightboxItem = itemIdx;
+    lightboxIndex = 0;
+    var box = document.getElementById('lightbox');
+    if (box) { box.hidden = false; renderLightbox(); }
+  };
+  window.closeLightbox = function () {
+    var box = document.getElementById('lightbox');
+    if (box) box.hidden = true;
+    lightboxItem = -1;
+  };
+  window.lightboxStep = function (dir) {
+    var images = window.portfolioGalleries[lightboxItem] || [];
+    if (!images.length) return;
+    lightboxIndex = (lightboxIndex + dir + images.length) % images.length;
+    renderLightbox();
+  };
 
   var userId = new URLSearchParams(location.search).get('u');
   if (!userId) {
