@@ -155,6 +155,11 @@ h2{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
       .replace(/'/g, '&#39;');
   }
 
+  function capitalizeFirst(s) {
+    s = String(s == null ? '' : s);
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }
+
   function setState(msg) {
     var el = document.getElementById('state');
     if (el) el.textContent = msg;
@@ -292,7 +297,7 @@ h2{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
                 : '';
 
               return '<div class="project">'
-                + '<div class="p-top"><h3>' + esc(proj.title) + '</h3>'
+                + '<div class="p-top"><h3>' + esc(capitalizeFirst(proj.title)) + '</h3>'
                 + '<span class="badge' + (isCompleted ? '' : ' live') + '">' + (isCompleted ? 'Completed' : 'In progress') + '</span></div>'
                 + (lineBits.length ? '<div class="p-line">' + lineBits.join(' · ') + '</div>' : '')
                 + (proj.description ? '<p>' + esc(proj.description) + '</p>' : '')
@@ -325,9 +330,9 @@ h2{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
                 ? '<a class="url" href="' + esc(normalizeUrl(item.externalUrl)) + '" target="_blank" rel="noopener noreferrer">' + esc(hostLabel(item.externalUrl)) + ' &rarr;</a>'
                 : (images.length ? '<button type="button" class="url" onclick="openLightbox(' + idx + ')">View pieces &rarr;</button>' : '');
               return '<div class="folio-item">'
-                + '<div class="folio-thumb"' + (images.length ? ' onclick="openLightbox(' + idx + ')"' : '') + '>' + (cover ? '<img src="' + esc(cover) + '" alt="' + esc(item.title) + '">' : '') + '</div>'
+                + '<div class="folio-thumb"' + (images.length ? ' onclick="openLightbox(' + idx + ')"' : '') + '>' + (cover ? '<img src="' + esc(cover) + '" alt="' + esc(capitalizeFirst(item.title)) + '">' : '') + '</div>'
                 + '<div class="folio-body">'
-                + '<div class="fh"><h4>' + esc(item.title) + '</h4>' + (tag ? '<span class="tag">' + esc(tag) + '</span>' : '') + '</div>'
+                + '<div class="fh"><h4>' + esc(capitalizeFirst(item.title)) + '</h4>' + (tag ? '<span class="tag">' + esc(tag) + '</span>' : '') + '</div>'
                 + (item.subtitle ? '<p>' + esc(item.subtitle) + '</p>' : '')
                 + urlRowHtml
                 + '</div></div>';
