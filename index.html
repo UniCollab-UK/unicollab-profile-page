@@ -8,11 +8,13 @@
   :root { color-scheme: light; }
   * { box-sizing: border-box; }
   body { margin: 0; background: #f2f2f7; color: #111111; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-  .wrap { max-width: 980px; margin: 0 auto; padding: 0 0 64px; }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 24px 24px 64px; }
 
-  .layout { display: grid; grid-template-columns: 1fr 300px; gap: 28px; align-items: start; margin-top: 8px; }
-  .layout-side .section { margin-top: 0; }
-  .layout-side > *:not(:first-child) { margin-top: 20px; }
+  .surface { background: #fff; border: 1px solid #e0dfd8; border-radius: 16px; padding: 24px 26px; }
+  .surface + .surface { margin-top: 20px; }
+
+  .layout { display: grid; grid-template-columns: 1fr 300px; gap: 20px; align-items: start; margin-top: 20px; }
+  .layout-side > * + * { margin-top: 20px; }
   @media (max-width: 760px) {
     .layout { grid-template-columns: 1fr; }
   }
@@ -24,8 +26,6 @@
   .brand-uni { color: #b2caff; }
   .brand-collab { color: #1E2761; }
   .kicker { font-size: 10.5px; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase; color: #aaa; }
-
-  .content { padding: 28px 24px 0; }
 
   .hero { display: flex; align-items: center; gap: 18px; }
   .avatar { width: 76px; height: 76px; border-radius: 38px; flex-shrink: 0; object-fit: cover; background: #dceeff; }
@@ -58,24 +58,25 @@
   .cta-sub { font-size: 13px; color: rgba(255,255,255,0.7); margin: 0 0 16px; line-height: 1.5; }
   .cta-btn { display: inline-block; background: #fff; color: #1E2761; font-size: 13.5px; font-weight: 800; padding: 11px 22px; border-radius: 100px; text-decoration: none; }
 
-  .card-soft { background: #eef0f5; border-radius: 16px; padding: 18px 20px; margin-top: 24px; font-size: 14.5px; line-height: 1.6; color: #333; white-space: pre-wrap; }
+  .bio-text { font-size: 14.5px; line-height: 1.6; color: #333; white-space: pre-wrap; margin-top: 20px; }
 
   .goal-card { background: #1E2761; border-radius: 16px; padding: 18px 20px; margin-top: 16px; }
   .goal-kicker { font-size: 10.5px; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase; color: rgba(255,255,255,0.6); margin-bottom: 6px; }
   .goal-role { font-size: 18px; font-weight: 800; color: #fff; }
 
-  .section { margin-top: 32px; }
-  .section-label { font-size: 11px; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase; color: #999; margin-bottom: 12px; border-bottom: 1px solid #e6e6ec; padding-bottom: 10px; }
+  .section + .section { margin-top: 28px; }
+  .section-label { font-size: 11px; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase; color: #999; margin-bottom: 14px; border-bottom: 1px solid #e6e6ec; padding-bottom: 10px; }
   .pills { display: flex; flex-wrap: wrap; gap: 7px; }
   .pill { background: #eef2ff; color: #1E2761; font-size: 12.5px; font-weight: 700; padding: 6px 12px; border-radius: 100px; }
 
-  .links-table { border: 1px solid #e6e6ec; border-radius: 14px; overflow: hidden; background: #fff; }
-  .links-row { display: flex; align-items: center; padding: 12px 16px; font-size: 13.5px; }
-  .links-row + .links-row { border-top: 1px solid #f0f0f4; }
-  .links-label { color: #888; width: 120px; flex-shrink: 0; font-weight: 600; }
+  .links-row { display: flex; align-items: center; padding: 8px 0; font-size: 13.5px; }
+  .links-row + .links-row { border-top: 1px solid #f0f0f4; margin-top: 8px; padding-top: 16px; }
+  .links-label { color: #888; width: 90px; flex-shrink: 0; font-weight: 600; }
   .links-value { color: #1a6ec7; font-weight: 700; text-decoration: none; word-break: break-word; }
 
-  .card { background: #fff; border: 1px solid #e0dfd8; border-radius: 16px; padding: 18px; margin-bottom: 12px; }
+  .project-item { padding: 18px 0; }
+  .project-item:first-child { padding-top: 0; }
+  .project-item + .project-item { border-top: 1px solid #eee; }
   .card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
   .card-title { font-size: 15.5px; font-weight: 700; margin: 0; }
   .card-body { font-size: 13.5px; color: #666; line-height: 1.55; margin: 8px 0 10px; white-space: pre-wrap; }
@@ -182,7 +183,7 @@
         }).join('') + '</div>'
       : '';
 
-    var bioHtml = p.bio ? '<div class="card-soft">' + esc(p.bio) + '</div>' : '';
+    var bioHtml = p.bio ? '<p class="bio-text">' + esc(p.bio) + '</p>' : '';
 
     var firstName = (p.name || '').trim().split(/\s+/)[0] || 'this student';
     var ctaHtml = p.userId
@@ -204,16 +205,14 @@
 
     var validLinks = (p.links || []).filter(function (l) { return l && l.url; });
     var linksHtml = validLinks.length
-      ? '<div class="section"><div class="section-label">Links</div><div class="links-table">'
-        + validLinks.map(function (l) {
+      ? '<div class="surface">' + validLinks.map(function (l) {
             var href = normalizeUrl(l.url);
             return '<div class="links-row"><span class="links-label">' + esc(l.label || 'Link') + '</span>'
               + '<a class="links-value" href="' + esc(href) + '" target="_blank" rel="noopener noreferrer">' + esc(l.url) + '</a></div>';
-          }).join('')
-        + '</div></div>'
+          }).join('') + '</div>'
       : '';
 
-    var workHtml = '<div class="section"><div class="section-label">Work</div>'
+    var projectsHtml = '<div class="section"><div class="section-label">Projects</div>'
       + (projects.length
           ? projects.map(function (proj) {
               var isCompleted = proj.status === 'completed';
@@ -240,7 +239,7 @@
                 ? '<ul class="outcomes">' + proj.outcomes.map(function (o) { return '<li>' + esc(o) + '</li>'; }).join('') + '</ul>'
                 : '';
 
-              return '<div class="card">'
+              return '<div class="project-item">'
                 + '<div class="card-top"><p class="card-title">' + esc(proj.title) + '</p>'
                 + '<span class="badge ' + (isCompleted ? 'badge-completed' : 'badge-active') + '">' + (isCompleted ? 'Completed' : 'Active') + '</span></div>'
                 + (detailLine ? '<p class="detail-line">' + detailLine + '</p>' : '')
@@ -252,7 +251,7 @@
           : '<p class="empty">No posted projects yet.</p>')
       + '</div>';
 
-    var portfolioHtml = '<div class="section"><div class="section-label">Portfolio</div>'
+    var portfolioHtml = '<div class="surface"><div class="section-label" style="margin-bottom:14px">Portfolio</div>'
       + (portfolio.length
           ? '<div class="grid">' + portfolio.map(function (item) {
               var cover = (item.images || [])[0];
@@ -270,12 +269,14 @@
       ? '<div class="verified-note"><b>Verified by UniCollab.</b> This student’s account email has been confirmed.</div>'
       : '';
 
+    var topSurfaceHtml = '<div class="surface">' + heroHtml + metaGridHtml + bioHtml + goalHtml + '</div>';
+
     var layoutHtml = '<div class="layout">'
-      + '<div class="layout-main">' + skillsHtml + workHtml + portfolioHtml + '</div>'
+      + '<div class="layout-main"><div class="surface">' + skillsHtml + projectsHtml + '</div>' + portfolioHtml + '</div>'
       + '<div class="layout-side">' + linksHtml + ctaHtml + verifiedNoteHtml + '</div>'
       + '</div>';
 
-    document.getElementById('app').innerHTML = heroHtml + metaGridHtml + bioHtml + goalHtml + layoutHtml;
+    document.getElementById('app').innerHTML = topSurfaceHtml + layoutHtml;
   }
 
   var userId = new URLSearchParams(location.search).get('u');
