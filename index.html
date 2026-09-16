@@ -23,13 +23,26 @@
   .hero { display: flex; align-items: center; gap: 18px; }
   .avatar { width: 76px; height: 76px; border-radius: 38px; flex-shrink: 0; object-fit: cover; background: #dceeff; }
   .avatar-fallback { width: 76px; height: 76px; border-radius: 38px; flex-shrink: 0; background: #1E2761; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 800; }
+  .name-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
   .name { font-size: 25px; font-weight: 800; letter-spacing: -0.4px; margin: 0 0 4px; }
   .meta { font-size: 14px; color: #666; margin: 0; }
   .uni { font-size: 13.5px; color: #1a6ec7; font-weight: 700; margin-top: 4px; }
+  .verified-badge { display: inline-flex; align-items: center; gap: 4px; background: #eef0f5; color: #1E2761; font-size: 11.5px; font-weight: 700; padding: 5px 11px; border-radius: 100px; margin-bottom: 4px; }
 
   .meta-grid { display: flex; flex-wrap: wrap; gap: 24px; margin-top: 16px; padding-top: 16px; border-top: 1px solid #e6e6ec; }
   .meta-item-label { font-size: 10.5px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; color: #aaa; margin-bottom: 3px; }
   .meta-item-value { font-size: 13.5px; font-weight: 700; color: #333; }
+
+  .detail-line { font-size: 12.5px; color: #888; margin: 8px 0 10px; }
+  .detail-line b { color: #333; font-weight: 700; }
+  .detail-table { margin-top: 10px; }
+  .detail-row { display: flex; gap: 14px; padding: 8px 0; font-size: 13px; align-items: flex-start; }
+  .detail-row + .detail-row { border-top: 1px solid #f0f0f0; }
+  .detail-label { color: #aaa; font-weight: 700; font-size: 10.5px; letter-spacing: 0.4px; text-transform: uppercase; width: 110px; flex-shrink: 0; padding-top: 2px; }
+  .detail-value { color: #444; line-height: 1.5; white-space: pre-wrap; }
+  .outcomes { margin: 10px 0 0; padding: 0; list-style: none; }
+  .outcomes li { position: relative; padding-left: 18px; font-size: 13px; color: #444; line-height: 1.6; }
+  .outcomes li::before { content: ''; position: absolute; left: 2px; top: 8px; width: 6px; height: 6px; border-radius: 3px; border: 1.5px solid #1a6ec7; }
 
   .cta-card { background: #1E2761; border-radius: 16px; padding: 22px; margin-top: 16px; text-align: center; }
   .cta-title { font-size: 16px; font-weight: 800; color: #fff; margin: 0 0 6px; }
@@ -112,12 +125,20 @@
     return /^https?:\/\//i.test(u) ? u : ('https://' + u);
   }
 
+  var MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
   function formatMonthYear(iso) {
     if (!iso) return '';
     var d = new Date(iso);
     if (isNaN(d.getTime())) return '';
-    var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-    return months[d.getMonth()] + ' ' + d.getFullYear();
+    return MONTHS[d.getMonth()] + ' ' + d.getFullYear();
+  }
+
+  function formatDayMonthYear(iso) {
+    if (!iso) return '';
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    return d.getDate() + ' ' + MONTHS[d.getMonth()] + ' ' + d.getFullYear();
   }
 
   function render(data) {
@@ -133,13 +154,17 @@
           ? '<img class="avatar" src="' + esc(p.avatarUrl) + '" alt="' + esc(p.name) + '">'
           : '<div class="avatar-fallback">' + esc(initials) + '</div>')
       + '<div>'
-      + '<p class="name">' + esc(p.name) + '</p>'
+      + '<div class="name-row"><p class="name">' + esc(p.name) + '</p>'
+      + (p.verified ? '<span class="verified-badge">&#10003; Verified student</span>' : '')
+      + '</div>'
       + (metaParts ? '<p class="meta">' + esc(metaParts) + '</p>' : '')
       + '</div></div>';
 
     var memberSince = formatMonthYear(p.memberSince);
     var metaItems = [];
     if (p.university) metaItems.push(['University', p.university]);
+    if (p.location) metaItems.push(['Location', p.location]);
+    if (p.graduation) metaItems.push(['Graduating', p.graduation]);
     if (memberSince) metaItems.push(['Member since', memberSince]);
     var metaGridHtml = metaItems.length
       ? '<div class="meta-grid">' + metaItems.map(function (item) {
@@ -182,13 +207,36 @@
       + (projects.length
           ? projects.map(function (proj) {
               var isCompleted = proj.status === 'completed';
+              var dateBits = [];
+              if (isCompleted && proj.completedAt) dateBits.push('Completed ' + formatDayMonthYear(proj.completedAt));
+              else if (proj.createdAt) dateBits.push('Started ' + formatDayMonthYear(proj.createdAt));
+              if (proj.timeline) dateBits.push('Duration ' + proj.timeline);
+              if (proj.teamSize) dateBits.push('Team ' + proj.teamSize + (proj.teamSize === 1 ? ' student' : ' students'));
+              var detailLine = (proj.role ? '<b>Role:</b> ' + esc(proj.role) + (dateBits.length ? ' · ' : '') : '')
+                + esc(dateBits.join(' · '));
+
+              var detailRows = [];
+              if (proj.brief) detailRows.push(['Brief', proj.brief]);
+              if (proj.contribution) detailRows.push(['My contribution', proj.contribution]);
+              if (proj.collaborators && proj.collaborators.length) detailRows.push(['Collaborators', proj.collaborators.join(' · ')]);
+              if (proj.skills && proj.skills.length) detailRows.push(['Skills used', proj.skills.join(' · ')]);
+              var detailTableHtml = detailRows.length
+                ? '<div class="detail-table">' + detailRows.map(function (row) {
+                    return '<div class="detail-row"><div class="detail-label">' + esc(row[0]) + '</div><div class="detail-value">' + esc(row[1]) + '</div></div>';
+                  }).join('') + '</div>'
+                : '';
+
+              var outcomesHtml = (proj.outcomes && proj.outcomes.length)
+                ? '<ul class="outcomes">' + proj.outcomes.map(function (o) { return '<li>' + esc(o) + '</li>'; }).join('') + '</ul>'
+                : '';
+
               return '<div class="card">'
                 + '<div class="card-top"><p class="card-title">' + esc(proj.title) + '</p>'
                 + '<span class="badge ' + (isCompleted ? 'badge-completed' : 'badge-active') + '">' + (isCompleted ? 'Completed' : 'Active') + '</span></div>'
+                + (detailLine ? '<p class="detail-line">' + detailLine + '</p>' : '')
                 + (proj.description ? '<p class="card-body">' + esc(proj.description) + '</p>' : '')
-                + ((proj.skills && proj.skills.length)
-                    ? '<div class="pills">' + proj.skills.map(function (s) { return '<span class="pill">' + esc(s) + '</span>'; }).join('') + '</div>'
-                    : '')
+                + detailTableHtml
+                + outcomesHtml
                 + '</div>';
             }).join('')
           : '<p class="empty">No posted projects yet.</p>')
