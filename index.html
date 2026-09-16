@@ -226,14 +226,14 @@ h2{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
       : '';
 
     var validLinks = (p.links || []).filter(function (l) { return l && l.url; });
-    var linksHtml = validLinks.length
-      ? '<div class="card"><h2>Links &amp; contact</h2><div class="side-links">'
-        + validLinks.map(function (l) {
-            var href = normalizeUrl(l.url);
-            return '<a href="' + esc(href) + '" target="_blank" rel="noopener noreferrer"><span class="k">' + esc(l.label || 'Link') + '</span><span class="v">' + esc(l.url) + '</span></a>';
-          }).join('')
-        + '</div></div>'
-      : '';
+    var linksHtml = '<div class="card"><h2>Links &amp; contact</h2>'
+      + (validLinks.length
+          ? '<div class="side-links">' + validLinks.map(function (l) {
+              var href = normalizeUrl(l.url);
+              return '<a href="' + esc(href) + '" target="_blank" rel="noopener noreferrer"><span class="k">' + esc(l.label || 'Link') + '</span><span class="v">' + esc(l.url) + '</span></a>';
+            }).join('') + '</div>'
+          : '<p class="empty">No links added yet.</p>')
+      + '</div>';
 
     var projectsHtml = '<div class="card"><h2>Projects</h2>'
       + (projects.length
