@@ -174,17 +174,19 @@ h2{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
       ? '<img src="' + esc(p.avatarUrl) + '" alt="' + esc(p.name) + '">'
       : esc(initials);
 
-    var metaItems = [];
-    if (p.university) metaItems.push(['University', p.university]);
-    if (p.location) metaItems.push(['Location', p.location]);
-    if (p.graduation) metaItems.push(['Graduating', p.graduation]);
+    // Always show all four columns, in this fixed order, even when a
+    // field hasn't been filled in yet — the label stays, the value is
+    // just left blank rather than hiding the whole column.
     var memberSince = formatMonthYear(p.memberSince);
-    if (memberSince) metaItems.push(['Member since', memberSince]);
-    var metaHtml = metaItems.length
-      ? '<div class="meta">' + metaItems.map(function (item) {
-          return '<div><strong>' + esc(item[0]) + '</strong> ' + esc(item[1]) + '</div>';
-        }).join('') + '</div>'
-      : '';
+    var metaItems = [
+      ['University', p.university || ''],
+      ['Location', p.location || ''],
+      ['Graduating', p.graduation || ''],
+      ['Member since', memberSince || ''],
+    ];
+    var metaHtml = '<div class="meta">' + metaItems.map(function (item) {
+        return '<div><strong>' + esc(item[0]) + '</strong> ' + esc(item[1]) + '</div>';
+      }).join('') + '</div>';
 
     var bioHtml = p.bio ? '<p class="bio">' + esc(p.bio) + '</p>' : '';
 
