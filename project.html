@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light">
+<title>UniCollab Project</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:light;--navy:#1E2761;--navy-2:#15205a;--ink:#111;--ink-2:#4a4a4f;--ink-3:#8a8a96;--line:#e3e6ef;--paper:#f2f2f7;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;color:var(--ink);background:var(--paper);line-height:1.6;min-height:100vh;}
+.topbar{background:#fff;border-bottom:1px solid var(--line);padding:16px 24px;}
+.brand{font-size:16px;font-weight:800;color:var(--navy);max-width:640px;margin:0 auto;}
+.wrap{max-width:640px;margin:0 auto;padding:32px 20px 48px;}
+.card{background:#fff;border:1px solid var(--line);border-radius:20px;overflow:hidden;}
+.cover{width:100%;aspect-ratio:16/9;object-fit:cover;background:#eef0fb;display:block;}
+.body{padding:24px;}
+.creator{display:flex;align-items:center;gap:10px;margin-bottom:16px;}
+.avatar{width:36px;height:36px;border-radius:999px;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;object-fit:cover;}
+.creator-name{font-size:13.5px;font-weight:700;color:var(--ink);}
+.creator-uni{font-size:12px;color:var(--ink-3);}
+h1{font-size:21px;font-weight:800;color:var(--ink);margin-bottom:10px;line-height:1.35;}
+.desc{font-size:14.5px;color:var(--ink-2);margin-bottom:16px;white-space:pre-wrap;}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:20px;}
+.tag{background:#eef0fb;color:var(--navy);font-size:12px;font-weight:700;padding:5px 12px;border-radius:999px;}
+.meta{font-size:12.5px;color:var(--ink-3);margin-bottom:20px;}
+.cta{display:block;text-align:center;background:var(--navy);color:#fff;font-size:14.5px;font-weight:700;padding:14px;border-radius:12px;text-decoration:none;}
+.cta:hover{background:var(--navy-2);}
+.hint{text-align:center;font-size:12px;color:var(--ink-3);margin-top:12px;}
+.empty{text-align:center;padding:60px 20px;color:var(--ink-2);font-size:14.5px;}
+</style>
+</head>
+<body>
+<div class="topbar"><div class="brand">UniCollab</div></div>
+<div class="wrap" id="content">
+  <div class="empty">Loading project…</div>
+</div>
+
+<script>
+const SUPABASE_URL = "https://vqkhzpydmltzwtanvrkp.supabase.co";
+const ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxa2h6cHlkbWx0end0YW52cmtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIwMzc3MzcsImV4cCI6MjA5NzYxMzczN30.-C_1xKQeZfNXHe14jWeyrQdXxq2oslGM0mJAnmXhOcU";
+const APP_STORE_URL = "https://apps.apple.com/app/id6811972510";
+const PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=com.unicollab.app";
+
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function initials(name) {
+  return (name || 'U').trim().split(/\s+/).map(w => w[0]).join('').slice(0,2).toUpperCase();
+}
+function storeUrl() {
+  const ua = navigator.userAgent || '';
+  if (/Android/i.test(ua)) return PLAY_STORE_URL;
+  return APP_STORE_URL;
+}
+
+const id = new URLSearchParams(location.search).get('id');
+const content = document.getElementById('content');
+
+if (!id) {
+  content.innerHTML = '<div class="empty">No project specified.</div>';
+} else {
+  fetch(`${SUPABASE_URL}/functions/v1/public-content?type=project&id=${encodeURIComponent(id)}`, {
+    headers: { 'Authorization': `Bearer ${ANON_KEY}`, 'apikey': ANON_KEY },
+  })
+    .then(r => r.json())
+    .then(data => {
+      if (!data.success) {
+        content.innerHTML = '<div class="empty">This project isn\'t available anymore.</div>';
+        return;
+      }
+      const p = data.project;
+      content.innerHTML = `
+        <div class="card">
+          ${p.coverImageUrl ? `<img class="cover" src="${esc(p.coverImageUrl)}" alt="">` : ''}
+          <div class="body">
+            <div class="creator">
+              ${p.creatorAvatarUrl
+                ? `<img class="avatar" src="${esc(p.creatorAvatarUrl)}" alt="">`
+                : `<div class="avatar">${esc(initials(p.creatorName))}</div>`}
+              <div>
+                <div class="creator-name">${esc(p.creatorName)}</div>
+                <div class="creator-uni">${esc(p.creatorUniversity)}</div>
+              </div>
+            </div>
+            <h1>${esc(p.title)}</h1>
+            ${p.description ? `<p class="desc">${esc(p.description)}</p>` : ''}
+            ${p.skills.length ? `<div class="tags">${p.skills.map(s => `<span class="tag">${esc(s)}</span>`).join('')}</div>` : ''}
+            <div class="meta">${p.timeline ? esc(p.timeline) + ' · ' : ''}${p.remote ? 'Remote' : 'In person'} · ${p.status === 'completed' ? 'Completed' : 'Open'}</div>
+            <a class="cta" href="unicollab://project/${esc(p.id)}" id="openBtn">Open in UniCollab</a>
+            <div class="hint">Don't have the app? <a href="#" id="storeLink">Get it here</a>.</div>
+          </div>
+        </div>`;
+
+      document.getElementById('storeLink').addEventListener('click', function(e) {
+        e.preventDefault();
+        window.location.href = storeUrl();
+      });
+
+      // Attempt to open the app via custom scheme immediately; if it fails
+      // (app not installed — nothing happens, no error thrown by design),
+      // fall back to the store after a short delay only if the page is
+      // still visible (i.e. the app didn't actually open and take over).
+      const fallbackTimer = setTimeout(() => {
+        if (document.visibilityState === 'visible') window.location.href = storeUrl();
+      }, 1500);
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') clearTimeout(fallbackTimer);
+      });
+    })
+    .catch(() => {
+      content.innerHTML = '<div class="empty">Something went wrong loading this project.</div>';
+    });
+}
+</script>
+</body>
+</html>
