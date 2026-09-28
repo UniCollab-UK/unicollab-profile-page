@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Verifying your UniCollab account…</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f2f2f7; color: #111; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 24px; box-sizing: border-box; }
+  .card { background: #fff; border-radius: 16px; padding: 32px; max-width: 420px; width: 100%; text-align: center; box-shadow: 0 1px 3px rgba(30,39,97,.08); }
+  h1 { font-size: 18px; margin: 0 0 12px; }
+  p { font-size: 14px; color: #4a4a4f; line-height: 1.6; margin: 0 0 20px; }
+  a { display: inline-block; background: #1E2761; color: #fff; text-decoration: none; padding: 12px 24px; border-radius: 999px; font-weight: 600; font-size: 14px; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>Verifying your account…</h1>
+    <p>If you're not redirected automatically in a moment, tap the button below.</p>
+    <a id="continueLink" href="#">Continue</a>
+  </div>
+  <script>
+    // This page exists for one reason: the actual verification link
+    // (Supabase's own /auth/v1/verify endpoint) lives on a different
+    // domain (supabase.co) than the email it's sent from
+    // (unicollab.co.uk) — that sender/link domain mismatch is a classic,
+    // heavily-weighted phishing signal for enterprise mail filters
+    // (confirmed directly: an identical test email with a supabase.co
+    // link was silently dropped by one recipient's mail system, while
+    // an otherwise-identical one with no link arrived fine). Routing
+    // the visible link through our own domain first removes that
+    // mismatch; this page's only job is to immediately hand off to the
+    // real verification URL.
+    var params = new URLSearchParams(window.location.search);
+    var tokenHash = params.get('token_hash');
+    var type = params.get('type') || 'signup';
+    var projectRef = 'vqkhzpydmltzwtanvrkp';
+    if (tokenHash) {
+      var target = 'https://' + projectRef + '.supabase.co/auth/v1/verify?token=' + encodeURIComponent(tokenHash) + '&type=' + encodeURIComponent(type) + '&redirect_to=unicollab://';
+      document.getElementById('continueLink').href = target;
+      window.location.replace(target);
+    } else {
+      document.querySelector('p').textContent = 'This link is missing required information. Please request a new verification email from the app.';
+      document.getElementById('continueLink').style.display = 'none';
+    }
+  </script>
+</body>
+</html>
