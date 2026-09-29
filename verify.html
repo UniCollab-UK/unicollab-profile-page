@@ -10,10 +10,18 @@
   h1 { font-size: 18px; margin: 0 0 12px; }
   h1.error { color: #c0392b; }
   p { font-size: 14px; color: #4a4a4f; line-height: 1.6; margin: 0 0 20px; }
-  a, button { display: inline-block; background: #1E2761; color: #fff; text-decoration: none; padding: 12px 24px; border-radius: 999px; font-weight: 600; font-size: 14px; border: none; font-family: inherit; }
+  a, button { display: inline-block; background: #1E2761; color: #fff; text-decoration: none; padding: 12px 24px; border-radius: 999px; font-weight: 600; font-size: 14px; border: none; font-family: inherit; cursor: pointer; }
+  button:disabled { opacity: .6; }
   .check { font-size: 40px; margin-bottom: 12px; }
   .hint { font-size: 12px; color: #8a8a8f; margin-top: 16px; display: none; }
   .hint.show { display: block; }
+  .field { text-align: left; margin: 0 0 16px; }
+  .field label { display: block; font-size: 13px; font-weight: 600; color: #111; margin: 0 0 6px; }
+  .field input { width: 100%; box-sizing: border-box; padding: 12px 14px; border-radius: 10px; border: 1px solid #d9d9de; font-size: 15px; font-family: inherit; }
+  .rules { text-align: left; font-size: 12px; color: #8a8a8f; margin: -8px 0 16px; }
+  .rules div { margin: 2px 0; }
+  .rules .met { color: #2e7d32; }
+  .err { color: #c0392b; font-size: 13px; margin: -8px 0 16px; text-align: left; }
 </style>
 </head>
 <body>
@@ -24,15 +32,12 @@
     </div>
   </div>
   <script>
-    // The actual verification call happens here, in the background, via
-    // fetch() — the browser's address bar stays on THIS page's own domain
-    // the whole time and never navigates to supabase.co. Only the final
-    // "Open UniCollab" tap ever leaves this page, and only to hand off to
-    // the app via its custom URL scheme.
     var params = new URLSearchParams(window.location.search);
     var tokenHash = params.get('token_hash');
     var type = params.get('type') || 'signup';
     var projectRef = 'vqkhzpydmltzwtanvrkp';
+    var anonKey = 'sb_publishable_Y1y9fqEQclJAnxCLanPMBA_b0Yk9pT7';
+    var authBase = 'https://' + projectRef + '.supabase.co/auth/v1';
 
     var headingEl = document.getElementById('heading');
     var messageEl = document.getElementById('message');
@@ -53,6 +58,28 @@
 
     if (!tokenHash) {
       showError('This link is missing required information. Please request a new verification email from the app.');
+    } else if (type === 'recovery') {
+      // Recovery gets its own flow entirely: the token is verified directly
+      // against Supabase Auth here (not routed through our own verify-email
+      // function, which deliberately never returns session tokens) because
+      // this is the one case where the browser genuinely needs a session —
+      // to call the password-update endpoint below.
+      fetch(authBase + '/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', apikey: anonKey },
+        body: JSON.stringify({ type: 'recovery', token_hash: tokenHash }),
+      })
+        .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+        .then(function (result) {
+          if (!result.ok || !result.data.access_token) {
+            showError('This link is invalid or has expired. Please request a new password reset from the app.');
+            return;
+          }
+          showPasswordForm(result.data.access_token);
+        })
+        .catch(function () {
+          showError('Something went wrong verifying your link. Please try again from the app.');
+        });
     } else {
       var apiUrl = 'https://' + projectRef + '.supabase.co/functions/v1/verify-email?token_hash=' + encodeURIComponent(tokenHash) + '&type=' + encodeURIComponent(type);
       fetch(apiUrl)
@@ -67,6 +94,84 @@
         .catch(function () {
           showError('Something went wrong verifying your account. Please try again from the app.');
         });
+    }
+
+    function showPasswordForm(accessToken) {
+      contentEl.innerHTML =
+        '<h1>Set a new password</h1>' +
+        '<div class="field"><label for="pw1">New password</label><input id="pw1" type="password" autocomplete="new-password" placeholder="At least 12 characters" /></div>' +
+        '<div class="rules" id="rules"></div>' +
+        '<div class="field"><label for="pw2">Confirm new password</label><input id="pw2" type="password" autocomplete="new-password" placeholder="Repeat your new password" /></div>' +
+        '<div class="err" id="pwErr" style="display:none;"></div>' +
+        '<button id="submitBtn" type="button">Reset password</button>';
+
+      var pw1 = document.getElementById('pw1');
+      var pw2 = document.getElementById('pw2');
+      var rulesEl = document.getElementById('rules');
+      var errEl = document.getElementById('pwErr');
+      var submitBtn = document.getElementById('submitBtn');
+
+      function checkRules(pw) {
+        var rules = [
+          { label: 'At least 12 characters', met: pw.length >= 12 },
+          { label: 'Uppercase letter', met: /[A-Z]/.test(pw) },
+          { label: 'Lowercase letter', met: /[a-z]/.test(pw) },
+          { label: 'Number', met: /[0-9]/.test(pw) },
+          { label: 'Special character', met: /[^a-zA-Z0-9]/.test(pw) },
+        ];
+        rulesEl.innerHTML = rules.map(function (r) {
+          return '<div class="' + (r.met ? 'met' : '') + '">' + (r.met ? '✓' : '✗') + ' ' + r.label + '</div>';
+        }).join('');
+        return rules.every(function (r) { return r.met; });
+      }
+
+      pw1.addEventListener('input', function () { checkRules(pw1.value); errEl.style.display = 'none'; });
+      checkRules('');
+
+      submitBtn.addEventListener('click', function () {
+        errEl.style.display = 'none';
+        if (!checkRules(pw1.value)) {
+          errEl.textContent = 'Please meet all password requirements above.';
+          errEl.style.display = 'block';
+          return;
+        }
+        if (pw1.value !== pw2.value) {
+          errEl.textContent = 'Passwords do not match.';
+          errEl.style.display = 'block';
+          return;
+        }
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Resetting…';
+        fetch(authBase + '/user', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            apikey: anonKey,
+            Authorization: 'Bearer ' + accessToken,
+          },
+          body: JSON.stringify({ password: pw1.value }),
+        })
+          .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+          .then(function (result) {
+            if (!result.ok) {
+              submitBtn.disabled = false;
+              submitBtn.textContent = 'Reset password';
+              errEl.textContent = (result.data && result.data.msg) || 'Something went wrong setting your new password. Please try again.';
+              errEl.style.display = 'block';
+              return;
+            }
+            contentEl.innerHTML =
+              '<div class="check">&#10003;</div>' +
+              '<h1>Password updated</h1>' +
+              '<p>Your password has been reset. Go back to the UniCollab app and sign in with your new password.</p>';
+          })
+          .catch(function () {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Reset password';
+            errEl.textContent = 'Something went wrong setting your new password. Please try again.';
+            errEl.style.display = 'block';
+          });
+      });
     }
   </script>
 </body>
