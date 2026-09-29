@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Verifying your UniCollab account…</title>
+<title>Confirm your UniCollab account</title>
 <style>
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f2f2f7; color: #111; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 24px; box-sizing: border-box; }
   .card { background: #fff; border-radius: 16px; padding: 32px; max-width: 420px; width: 100%; text-align: center; box-shadow: 0 1px 3px rgba(30,39,97,.08); }
@@ -14,22 +14,30 @@
 </head>
 <body>
   <div class="card">
-    <h1>Verifying your account…</h1>
-    <p>If you're not redirected automatically in a moment, tap the button below.</p>
+    <h1>Confirm your account</h1>
+    <p>Tap the button below to finish verifying your UniCollab account.</p>
     <a id="continueLink" href="#">Continue</a>
   </div>
   <script>
-    // This page exists for one reason: the actual verification link
-    // (Supabase's own /auth/v1/verify endpoint) lives on a different
-    // domain (supabase.co) than the email it's sent from
-    // (unicollab.co.uk) — that sender/link domain mismatch is a classic,
-    // heavily-weighted phishing signal for enterprise mail filters
-    // (confirmed directly: an identical test email with a supabase.co
-    // link was silently dropped by one recipient's mail system, while
-    // an otherwise-identical one with no link arrived fine). Routing
-    // the visible link through our own domain first removes that
-    // mismatch; this page's only job is to immediately hand off to the
-    // real verification URL.
+    // Deliberately NOT an automatic redirect. An earlier version of this
+    // page forwarded to the real Supabase verification URL the instant it
+    // loaded — which meant an automated security pre-scan (mail systems
+    // routinely visit links in incoming email before deciding whether to
+    // deliver it) would silently complete the ENTIRE verification itself,
+    // including the final hop to a non-web custom scheme
+    // (unicollab://...) that Supabase's own redirect_to produces on
+    // success. A scanner following a redirect chain that ends in a
+    // non-HTTP protocol is a textbook phishing/evasion signature, and is
+    // the far more likely explanation for messages being silently dropped
+    // before delivery than anything about the email's content — this
+    // exact behaviour (fake/invalid tokens always arrived; only messages
+    // with a real, completable token never did) only makes sense if
+    // something automated was completing the real link before the email
+    // ever reached the inbox. Requiring an explicit tap here mirrors what
+    // Supabase's own /auth/v1/verify endpoint already does for the same
+    // reason (its own "Confirm email address" button, not an instant
+    // redirect) — a scanner that doesn't click buttons never completes
+    // the real verification, only a human does.
     var params = new URLSearchParams(window.location.search);
     var tokenHash = params.get('token_hash');
     var type = params.get('type') || 'signup';
@@ -37,7 +45,6 @@
     if (tokenHash) {
       var target = 'https://' + projectRef + '.supabase.co/auth/v1/verify?token=' + encodeURIComponent(tokenHash) + '&type=' + encodeURIComponent(type) + '&redirect_to=unicollab://';
       document.getElementById('continueLink').href = target;
-      window.location.replace(target);
     } else {
       document.querySelector('p').textContent = 'This link is missing required information. Please request a new verification email from the app.';
       document.getElementById('continueLink').style.display = 'none';
