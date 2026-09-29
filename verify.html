@@ -8,52 +8,65 @@
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f2f2f7; color: #111; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 24px; box-sizing: border-box; }
   .card { background: #fff; border-radius: 16px; padding: 32px; max-width: 420px; width: 100%; text-align: center; box-shadow: 0 1px 3px rgba(30,39,97,.08); }
   h1 { font-size: 18px; margin: 0 0 12px; }
+  h1.error { color: #c0392b; }
   p { font-size: 14px; color: #4a4a4f; line-height: 1.6; margin: 0 0 20px; }
-  a { display: inline-block; background: #1E2761; color: #fff; text-decoration: none; padding: 12px 24px; border-radius: 999px; font-weight: 600; font-size: 14px; }
+  a, button { display: inline-block; background: #1E2761; color: #fff; text-decoration: none; padding: 12px 24px; border-radius: 999px; font-weight: 600; font-size: 14px; border: none; font-family: inherit; }
+  .check { font-size: 40px; margin-bottom: 12px; }
+  .hint { font-size: 12px; color: #8a8a8f; margin-top: 16px; display: none; }
+  .hint.show { display: block; }
 </style>
 </head>
 <body>
   <div class="card">
-    <h1>Confirm your account</h1>
-    <p>Tap the button below to finish verifying your UniCollab account.</p>
-    <a id="continueLink" href="#">Continue</a>
+    <div id="content">
+      <h1 id="heading">Confirming your account…</h1>
+      <p id="message">One moment.</p>
+    </div>
   </div>
   <script>
-    // Deliberately NOT an automatic redirect. An earlier version of this
-    // page forwarded to the real Supabase verification URL the instant it
-    // loaded — which meant an automated security pre-scan (mail systems
-    // routinely visit links in incoming email before deciding whether to
-    // deliver it) would silently complete the ENTIRE verification itself,
-    // including the final hop to a non-web custom scheme
-    // (unicollab://...) that Supabase's own redirect_to produces on
-    // success. A scanner following a redirect chain that ends in a
-    // non-HTTP protocol is a textbook phishing/evasion signature, and is
-    // the far more likely explanation for messages being silently dropped
-    // before delivery than anything about the email's content — this
-    // exact behaviour (fake/invalid tokens always arrived; only messages
-    // with a real, completable token never did) only makes sense if
-    // something automated was completing the real link before the email
-    // ever reached the inbox. Requiring an explicit tap here mirrors what
-    // Supabase's own /auth/v1/verify endpoint already does for the same
-    // reason (its own "Confirm email address" button, not an instant
-    // redirect) — a scanner that doesn't click buttons never completes
-    // the real verification, only a human does.
+    // The actual verification call happens here, in the background, via
+    // fetch() — the browser's address bar stays on THIS page's own domain
+    // the whole time and never navigates to supabase.co. Only the final
+    // "Open UniCollab" tap ever leaves this page, and only to hand off to
+    // the app via its custom URL scheme.
     var params = new URLSearchParams(window.location.search);
     var tokenHash = params.get('token_hash');
     var type = params.get('type') || 'signup';
     var projectRef = 'vqkhzpydmltzwtanvrkp';
-    if (tokenHash) {
-      // Points at our own verify-email function, not Supabase's hosted
-      // /auth/v1/verify endpoint — that endpoint verifies AND 302-redirects
-      // straight to the app in one hop, so nothing ever gets shown here.
-      // verify-email does the same verification server-side but returns an
-      // actual "Verification completed" page first, with a separate,
-      // explicit "Open UniCollab" action — which is what was asked for.
-      var target = 'https://' + projectRef + '.supabase.co/functions/v1/verify-email?token_hash=' + encodeURIComponent(tokenHash) + '&type=' + encodeURIComponent(type);
-      document.getElementById('continueLink').href = target;
+
+    var headingEl = document.getElementById('heading');
+    var messageEl = document.getElementById('message');
+    var contentEl = document.getElementById('content');
+
+    function showError(msg) {
+      headingEl.textContent = 'Verification failed';
+      headingEl.className = 'error';
+      messageEl.textContent = msg;
+    }
+
+    function showSuccess() {
+      contentEl.innerHTML =
+        '<div class="check">&#10003;</div>' +
+        '<h1>Verification completed</h1>' +
+        '<p>Your email is confirmed. Go back to the UniCollab app and tap "I’m verified" to continue your registration.</p>';
+    }
+
+    if (!tokenHash) {
+      showError('This link is missing required information. Please request a new verification email from the app.');
     } else {
-      document.querySelector('p').textContent = 'This link is missing required information. Please request a new verification email from the app.';
-      document.getElementById('continueLink').style.display = 'none';
+      var apiUrl = 'https://' + projectRef + '.supabase.co/functions/v1/verify-email?token_hash=' + encodeURIComponent(tokenHash) + '&type=' + encodeURIComponent(type);
+      fetch(apiUrl)
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+          if (data.ok) {
+            showSuccess();
+          } else {
+            showError(data.message || 'This link is invalid or has expired. Please request a new verification email from the app.');
+          }
+        })
+        .catch(function () {
+          showError('Something went wrong verifying your account. Please try again from the app.');
+        });
     }
   </script>
 </body>
