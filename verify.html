@@ -59,27 +59,38 @@
     if (!tokenHash) {
       showError('This link is missing required information. Please request a new verification email from the app.');
     } else if (type === 'recovery') {
-      // Recovery gets its own flow entirely: the token is verified directly
-      // against Supabase Auth here (not routed through our own verify-email
-      // function, which deliberately never returns session tokens) because
-      // this is the one case where the browser genuinely needs a session —
-      // to call the password-update endpoint below.
-      fetch(authBase + '/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', apikey: anonKey },
-        body: JSON.stringify({ type: 'recovery', token_hash: tokenHash }),
-      })
-        .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
-        .then(function (result) {
-          if (!result.ok || !result.data.access_token) {
-            showError('This link is invalid or has expired. Please request a new password reset from the app.');
-            return;
-          }
-          showPasswordForm(result.data.access_token);
+      // Deliberately NOT auto-firing the token-consuming call on page load.
+      // Enterprise mail security (Outlook "Safe Links" and similar) opens
+      // every link in an email automatically to scan it before the person
+      // ever sees it — and since a recovery token is single-use, that
+      // automated visit burns it before a real click can. Requiring an
+      // explicit tap here means only a real person (not a page-fetching
+      // scanner) ever triggers the actual verify call below.
+      contentEl.innerHTML =
+        '<h1>Reset your password</h1>' +
+        '<p>Tap below to continue resetting your UniCollab password.</p>' +
+        '<button id="continueBtn" type="button">Continue</button>';
+      document.getElementById('continueBtn').addEventListener('click', function () {
+        var btn = this;
+        btn.disabled = true;
+        btn.textContent = 'Verifying…';
+        fetch(authBase + '/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', apikey: anonKey },
+          body: JSON.stringify({ type: 'recovery', token_hash: tokenHash }),
         })
-        .catch(function () {
-          showError('Something went wrong verifying your link. Please try again from the app.');
-        });
+          .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+          .then(function (result) {
+            if (!result.ok || !result.data.access_token) {
+              showError('This link is invalid or has expired. Please request a new password reset from the app.');
+              return;
+            }
+            showPasswordForm(result.data.access_token);
+          })
+          .catch(function () {
+            showError('Something went wrong verifying your link. Please try again from the app.');
+          });
+      });
     } else {
       var apiUrl = 'https://' + projectRef + '.supabase.co/functions/v1/verify-email?token_hash=' + encodeURIComponent(tokenHash) + '&type=' + encodeURIComponent(type);
       fetch(apiUrl)
