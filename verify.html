@@ -43,7 +43,13 @@
     var type = params.get('type') || 'signup';
     var projectRef = 'vqkhzpydmltzwtanvrkp';
     if (tokenHash) {
-      var target = 'https://' + projectRef + '.supabase.co/auth/v1/verify?token=' + encodeURIComponent(tokenHash) + '&type=' + encodeURIComponent(type) + '&redirect_to=unicollab://';
+      // Points at our own verify-email function, not Supabase's hosted
+      // /auth/v1/verify endpoint — that endpoint verifies AND 302-redirects
+      // straight to the app in one hop, so nothing ever gets shown here.
+      // verify-email does the same verification server-side but returns an
+      // actual "Verification completed" page first, with a separate,
+      // explicit "Open UniCollab" action — which is what was asked for.
+      var target = 'https://' + projectRef + '.supabase.co/functions/v1/verify-email?token_hash=' + encodeURIComponent(tokenHash) + '&type=' + encodeURIComponent(type);
       document.getElementById('continueLink').href = target;
     } else {
       document.querySelector('p').textContent = 'This link is missing required information. Please request a new verification email from the app.';
