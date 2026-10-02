@@ -69,8 +69,7 @@ h2{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
 .p-line strong{color:var(--ink-2);font-weight:600;}
 .project p{font-size:15px;color:var(--ink-2);margin-bottom:14px;max-width:72ch;white-space:pre-wrap;}
 
-.cv-headline{font-size:16px;font-weight:700;color:var(--navy);}
-.cv-summary{margin-top:8px;font-size:14.5px;color:var(--ink-2);max-width:72ch;white-space:pre-wrap;line-height:1.6;}
+.cv-summary{font-size:14.5px;color:var(--ink-2);max-width:72ch;white-space:pre-wrap;line-height:1.6;}
 .cv-exp-list{margin-top:22px;}
 .cv-exp{padding:16px 0;border-top:1px solid var(--line);}
 .cv-exp:first-child{padding-top:0;border-top:none;}
@@ -219,7 +218,7 @@ h2{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
   <div class="about-overlay" id="cvModal" hidden>
     <div class="about-panel cv-panel">
       <button class="about-close" id="cvClose" aria-label="Close">&times;</button>
-      <h2>My CV</h2>
+      <h2 id="cvModalTitle">My CV</h2>
       <div id="cvModalBody"></div>
     </div>
   </div>
@@ -447,16 +446,15 @@ h2{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
       + '</div>';
 
     var cvExp = (p.cv && p.cv.experiences) || [];
-    var hasCv = !!(p.cv && (p.cv.headline || p.cv.summary || cvExp.length));
+    var hasCv = !!(p.cv && (p.cv.summary || cvExp.length));
 
     // The CV's own content goes inside the modal (opened from the sidebar
     // button below), not inline on the page — same "tucked behind a click"
     // treatment as the About UniCollab panel.
     var cvModalBodyHtml = hasCv
-      ? (p.cv.headline ? '<div class="cv-headline">' + esc(p.cv.headline) + '</div>' : '')
-        + (p.cv.summary ? '<p class="cv-summary">' + esc(p.cv.summary) + '</p>' : '')
+      ? (p.cv.summary ? '<h3>Summary</h3><p class="cv-summary">' + esc(p.cv.summary) + '</p>' : '')
         + (cvExp.length
-            ? '<div' + (p.cv.headline || p.cv.summary ? ' class="cv-exp-list"' : '') + '>' + cvExp.map(function (e) {
+            ? '<div' + (p.cv.summary ? ' class="cv-exp-list"' : '') + '>' + cvExp.map(function (e) {
                 return '<div class="cv-exp">'
                   + '<div class="cv-exp-top"><h4>' + esc(e.role || '') + '</h4>' + (e.date ? '<span class="cv-exp-date">' + esc(e.date) + '</span>' : '') + '</div>'
                   + (e.org ? '<div class="cv-exp-org">' + esc(e.org) + '</div>' : '')
@@ -468,7 +466,7 @@ h2{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
 
     var cvCtaHtml = hasCv
       ? '<div class="cta cta-light"><h3>View ' + esc(firstName) + '&rsquo;s CV</h3>'
-        + '<p>See ' + esc(firstName) + '&rsquo;s full headline, summary and work experience.</p>'
+        + '<p>See ' + esc(firstName) + '&rsquo;s full summary and work experience.</p>'
         + '<button type="button" class="btn" id="cvOpenBtn">Click here</button></div>'
       : '';
 
@@ -492,7 +490,9 @@ h2{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
     var cvOpenBtn = document.getElementById('cvOpenBtn');
     var cvModal = document.getElementById('cvModal');
     var cvModalBody = document.getElementById('cvModalBody');
+    var cvModalTitle = document.getElementById('cvModalTitle');
     if (cvOpenBtn && cvModal && cvModalBody) {
+      if (cvModalTitle) cvModalTitle.textContent = p.name ? p.name + '’s CV' : 'My CV';
       cvModalBody.innerHTML = cvModalBodyHtml;
       cvOpenBtn.addEventListener('click', function () { cvModal.hidden = false; });
     }
