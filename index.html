@@ -300,10 +300,24 @@ h2{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
         + '<a class="btn" href="unicollab://profile/' + esc(p.userId) + '">Open in UniCollab</a></div>'
       : '';
 
-    var skillsHtml = (p.skills && p.skills.length)
-      ? '<div class="card"><h2>Skills</h2><div class="skill-group"><div class="chips">'
-        + p.skills.map(function (s) { return '<span class="chip">' + esc(s) + '</span>'; }).join('')
-        + '</div></div></div>'
+    // Trust the saved category grouping only while it actually accounts for
+    // every current skill — otherwise (skills added after the last grouping
+    // pass, or no grouping saved at all) fall back to one flat group so a
+    // skill is never silently missing from the page.
+    var categorizedCount = (p.skillCategories || []).reduce(function (n, g) { return n + (g.skills ? g.skills.length : 0); }, 0);
+    var skillGroups = (p.skillCategories && p.skillCategories.length && categorizedCount === (p.skills || []).length)
+      ? p.skillCategories
+      : ((p.skills && p.skills.length) ? [{ category: null, skills: p.skills }] : []);
+
+    var skillsHtml = skillGroups.length
+      ? '<div class="card"><h2>Skills</h2>'
+        + skillGroups.map(function (g) {
+            return '<div class="skill-group">'
+              + (g.category ? '<div class="gl">' + esc(g.category) + '</div>' : '')
+              + '<div class="chips">' + g.skills.map(function (s) { return '<span class="chip">' + esc(s) + '</span>'; }).join('') + '</div>'
+              + '</div>';
+          }).join('')
+        + '</div>'
       : '';
 
     var validLinks = (p.links || []).filter(function (l) { return l && l.url; });
