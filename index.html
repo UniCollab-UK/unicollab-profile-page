@@ -137,7 +137,14 @@ h2{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
 
 .empty{font-size:13.5px;color:var(--ink-3);}
 .state{padding:80px 24px;text-align:center;font-size:14.5px;color:var(--ink-3);}
-@media print{.topbar{position:static;}.top-actions{display:none;}body{background:#fff;}.card,.hero{box-shadow:none;border:1px solid var(--line);}}
+@media print{.topbar{position:static;}.top-actions{display:none;}body{background:#fff;}.card,.hero{box-shadow:none;border:1px solid var(--line);}
+  /* The CV lives in a hidden modal (#cvModal) for normal browsing — print
+     needs to see it regardless of that [hidden] state, flowing inline at
+     its place in the document instead of as a fixed-position overlay. */
+  #cvModal{display:block!important;position:static!important;inset:auto!important;background:none!important;padding:0!important;margin-top:20px;}
+  #cvModal .cv-panel{box-shadow:none!important;max-width:100%!important;max-height:none!important;overflow:visible!important;border:1px solid var(--line);}
+  #cvModal .about-close{display:none!important;}
+}
 
 .brand{display:flex;align-items:center;}
 .brand .mark{height:36px;width:auto;display:block;}
