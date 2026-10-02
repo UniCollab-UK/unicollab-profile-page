@@ -54,8 +54,13 @@ h2{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
 
 .skill-group{margin-bottom:16px;}
 .skill-group:last-child{margin-bottom:0;}
-.gl{font-size:12.5px;font-weight:700;color:var(--ink-3);margin-bottom:7px;}
+.gl{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;color:var(--ink-3);margin-bottom:7px;background:none;border:none;padding:0;cursor:pointer;font-family:inherit;}
+.gl:hover{color:var(--navy);}
+.gl-chevron{flex:none;transition:transform .15s ease;}
+.gl[aria-expanded="false"] .gl-chevron{transform:rotate(-90deg);}
+.gl[aria-expanded="false"]{margin-bottom:14px;}
 .chips{display:flex;flex-wrap:wrap;gap:7px;}
+.chips[hidden]{display:none;}
 .chip{font-size:13px;font-weight:600;color:var(--navy);background:var(--ice-bg);border:1px solid var(--ice);padding:5px 13px;border-radius:999px;}
 
 .project{padding:22px 0;border-bottom:1px solid var(--line);}
@@ -341,10 +346,16 @@ h2{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
 
     var skillsHtml = skillGroups.length
       ? '<div class="card"><h2>Skills</h2>'
-        + skillGroups.map(function (g) {
+        + skillGroups.map(function (g, gi) {
+            var labelHtml = g.category
+              ? '<button type="button" class="gl" id="glBtn' + gi + '" aria-expanded="true" onclick="toggleSkillGroup(' + gi + ')">'
+                + '<span>' + esc(g.category) + '</span>'
+                + '<svg class="gl-chevron" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>'
+                + '</button>'
+              : '';
             return '<div class="skill-group">'
-              + (g.category ? '<div class="gl">' + esc(g.category) + '</div>' : '')
-              + '<div class="chips">' + g.skills.map(function (s) { return '<span class="chip">' + esc(s) + '</span>'; }).join('') + '</div>'
+              + labelHtml
+              + '<div class="chips" id="skillChips' + gi + '">' + g.skills.map(function (s) { return '<span class="chip">' + esc(s) + '</span>'; }).join('') + '</div>'
               + '</div>';
           }).join('')
         + '</div>'
@@ -586,6 +597,14 @@ h2{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
       + (images.length > 1 ? '<button type="button" class="lightbox-nav lightbox-next" onclick="lightboxStep(1)">&rarr;</button>' : '')
       + (images.length > 1 ? '<div class="lightbox-count">' + (lightboxIndex + 1) + ' / ' + images.length + '</div>' : '');
   }
+
+  window.toggleSkillGroup = function (gi) {
+    var chips = document.getElementById('skillChips' + gi);
+    var btn = document.getElementById('glBtn' + gi);
+    if (!chips) return;
+    chips.hidden = !chips.hidden;
+    if (btn) btn.setAttribute('aria-expanded', String(!chips.hidden));
+  };
 
   window.openLightbox = function (itemIdx) {
     lightboxItem = itemIdx;
