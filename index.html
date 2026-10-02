@@ -136,12 +136,18 @@ h2{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
 .about-overlay{position:fixed;inset:0;z-index:50;background:rgba(17,17,17,.55);align-items:center;justify-content:center;padding:24px;}
 .about-overlay:not([hidden]){display:flex;}
 .about-overlay[hidden]{display:none;}
-.about-panel{background:#fff;border-radius:18px;padding:28px;max-width:420px;width:100%;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.25);}
+.about-panel{background:#fff;border-radius:18px;padding:28px;max-width:460px;width:100%;max-height:85vh;overflow-y:auto;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.25);}
 .about-close{position:absolute;top:14px;right:14px;width:30px;height:30px;border-radius:15px;border:none;background:#f0f0f0;font-size:18px;line-height:1;cursor:pointer;color:#555;}
 .about-logo{height:34px;width:auto;display:block;margin-bottom:16px;}
 .about-panel h2{font-size:19px;font-weight:800;color:var(--navy);margin-bottom:10px;letter-spacing:-.01em;}
+.about-panel h3{font-size:12px;font-weight:800;color:var(--ink-3);letter-spacing:.06em;text-transform:uppercase;margin:16px 0 8px;}
 .about-panel p{font-size:14px;color:var(--ink-2);line-height:1.6;margin-bottom:10px;}
 .about-panel p:last-child{margin-bottom:0;}
+.about-list{list-style:none;margin:0 0 10px;padding:0;}
+.about-list li{position:relative;padding-left:18px;font-size:14px;color:var(--ink-2);line-height:1.55;margin-bottom:9px;}
+.about-list li:last-child{margin-bottom:0;}
+.about-list li::before{content:"–";position:absolute;left:0;top:0;color:var(--navy);font-weight:700;}
+.about-list b{color:var(--ink);font-weight:700;}
 @media print{.menu-wrap{display:none;}}
 </style>
 </head>
@@ -173,8 +179,17 @@ h2{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
       <button class="about-close" id="aboutClose" aria-label="Close">&times;</button>
       <img class="about-logo" src="logo.png" alt="UniCollab">
       <h2>About UniCollab</h2>
-      <p>UniCollab is where university students team up on real projects outside the classroom — finding collaborators from other courses and universities, building a genuine portfolio of work, and growing the skills that get noticed.</p>
-      <p>This page is a student's public, shareable digital CV — a quick way for anyone to see their skills, projects and work, no account required.</p>
+      <p>UniCollab is a platform for university students to team up on real projects outside the classroom — finding collaborators from other courses and universities, building a genuine portfolio of work, and growing the skills that get noticed by employers.</p>
+      <h3>What you can do on UniCollab</h3>
+      <ul class="about-list">
+        <li><b>Post or find a project</b> — share something you're building and need help with, or browse what other students are looking for collaborators on.</li>
+        <li><b>Build a team</b> — invite collaborators, track who contributed what, and keep a record of the skills each person used.</li>
+        <li><b>Grow a real portfolio</b> — completed projects, outcomes and work samples live on your profile, not just a list of modules.</li>
+        <li><b>Sharpen your CV</b> — AI tools score your CV against real roles, spot skill gaps, and coach you ahead of interviews.</li>
+        <li><b>Stay organised</b> — message collaborators, schedule meetings and manage deadlines in one place.</li>
+        <li><b>Know who you're working with</b> — accounts are verified against a real university email before they can collaborate.</li>
+      </ul>
+      <p>This page is a student's public, shareable digital CV, generated from their UniCollab profile — a quick way for anyone to see their skills, projects and work, no account required.</p>
     </div>
   </div>
 
