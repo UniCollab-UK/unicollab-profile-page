@@ -126,6 +126,11 @@ h2{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
 .cta p{font-size:13.5px;opacity:.85;margin-bottom:16px;}
 .cta .btn{display:block;width:100%;font-family:inherit;font-size:14px;font-weight:600;padding:11px 20px;border-radius:999px;border:none;cursor:pointer;background:var(--ice);color:var(--navy);text-decoration:none;text-align:center;}
 .cta .btn:hover{background:#cfe2fb;}
+.cta-light{background:#fff;color:var(--ink);border:1px solid var(--line);box-shadow:0 1px 3px rgba(30,39,97,.06);}
+.cta-light h3{color:var(--navy);}
+.cta-light p{color:var(--ink-3);opacity:1;}
+.cta-light .btn{background:var(--navy);color:#fff;font-family:inherit;}
+.cta-light .btn:hover{background:#2d3a8c;}
 
 .foot{text-align:center;margin-top:36px;padding-top:24px;border-top:1px solid var(--line);font-size:13px;color:var(--ink-3);}
 .foot .legal{margin-top:8px;font-size:12px;}
@@ -148,6 +153,7 @@ h2{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
 .about-overlay:not([hidden]){display:flex;}
 .about-overlay[hidden]{display:none;}
 .about-panel{background:#fff;border-radius:18px;padding:28px;max-width:460px;width:100%;max-height:85vh;overflow-y:auto;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.25);}
+.cv-panel{max-width:620px;}
 .about-close{position:absolute;top:14px;right:14px;width:30px;height:30px;border-radius:15px;border:none;background:#f0f0f0;font-size:18px;line-height:1;cursor:pointer;color:#555;}
 .about-logo{height:34px;width:auto;display:block;margin-bottom:16px;}
 .about-panel h2{font-size:19px;font-weight:800;color:var(--navy);margin-bottom:10px;letter-spacing:-.01em;}
@@ -201,6 +207,13 @@ h2{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
         <li><b>Know who you're working with</b> — accounts are verified against a real university email before they can collaborate.</li>
       </ul>
       <p>This page is a student's public, shareable digital CV, generated from their UniCollab profile — a quick way for anyone to see their skills, projects and work, no account required.</p>
+    </div>
+  </div>
+  <div class="about-overlay" id="cvModal" hidden>
+    <div class="about-panel cv-panel">
+      <button class="about-close" id="cvClose" aria-label="Close">&times;</button>
+      <h2>My CV</h2>
+      <div id="cvModalBody"></div>
     </div>
   </div>
 
@@ -427,9 +440,13 @@ h2{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
       + '</div>';
 
     var cvExp = (p.cv && p.cv.experiences) || [];
-    var cvHtml = (p.cv && (p.cv.headline || p.cv.summary || cvExp.length))
-      ? '<div class="card"><h2>My CV</h2>'
-        + (p.cv.headline ? '<div class="cv-headline">' + esc(p.cv.headline) + '</div>' : '')
+    var hasCv = !!(p.cv && (p.cv.headline || p.cv.summary || cvExp.length));
+
+    // The CV's own content goes inside the modal (opened from the sidebar
+    // button below), not inline on the page — same "tucked behind a click"
+    // treatment as the About UniCollab panel.
+    var cvModalBodyHtml = hasCv
+      ? (p.cv.headline ? '<div class="cv-headline">' + esc(p.cv.headline) + '</div>' : '')
         + (p.cv.summary ? '<p class="cv-summary">' + esc(p.cv.summary) + '</p>' : '')
         + (cvExp.length
             ? '<div' + (p.cv.headline || p.cv.summary ? ' class="cv-exp-list"' : '') + '>' + cvExp.map(function (e) {
@@ -440,7 +457,12 @@ h2{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
                   + '</div>';
               }).join('') + '</div>'
             : '')
-        + '</div>'
+      : '';
+
+    var cvCtaHtml = hasCv
+      ? '<div class="cta cta-light"><h3>View ' + esc(firstName) + '&rsquo;s CV</h3>'
+        + '<p>See ' + esc(firstName) + '&rsquo;s full headline, summary and work experience.</p>'
+        + '<button type="button" class="btn" id="cvOpenBtn">Click here</button></div>'
       : '';
 
     var verifyHtml = p.verified
@@ -448,13 +470,25 @@ h2{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
       : '';
 
     var colsHtml = '<div class="cols">'
-      + '<div class="main">' + skillsHtml + projectsHtml + portfolioHtml + cvHtml + '</div>'
-      + '<div class="side">' + linksHtml + ctaHtml + verifyHtml + '</div>'
+      + '<div class="main">' + skillsHtml + projectsHtml + portfolioHtml + '</div>'
+      + '<div class="side">' + linksHtml + ctaHtml + cvCtaHtml + verifyHtml + '</div>'
       + '</div>';
 
     var footHtml = '<div class="foot"><div class="legal">Copyright © ' + new Date().getFullYear() + ' KYJ House Ltd. All rights reserved. UniCollab&trade; is a trademark of KYJ House Ltd.</div></div>';
 
     document.getElementById('app').innerHTML = heroHtml + colsHtml + footHtml;
+
+    // The CV button only exists once the profile has rendered (it's part
+    // of colsHtml above), so it's wired up here rather than in the static
+    // script block below — same reason the hamburger menu's items are
+    // wired there but this one has to be wired here instead.
+    var cvOpenBtn = document.getElementById('cvOpenBtn');
+    var cvModal = document.getElementById('cvModal');
+    var cvModalBody = document.getElementById('cvModalBody');
+    if (cvOpenBtn && cvModal && cvModalBody) {
+      cvModalBody.innerHTML = cvModalBodyHtml;
+      cvOpenBtn.addEventListener('click', function () { cvModal.hidden = false; });
+    }
   }
 
   var menuBtn = document.getElementById('menuBtn');
@@ -515,6 +549,20 @@ h2{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
   if (aboutModal) {
     aboutModal.addEventListener('click', function (e) {
       if (e.target === aboutModal) aboutModal.hidden = true;
+    });
+  }
+
+  // cvOpenBtn itself is wired inside render() (it's part of the dynamically
+  // rendered page), but the modal's close button and click-outside-to-close
+  // are static DOM, so they're wired here same as the About modal's.
+  var cvModal = document.getElementById('cvModal');
+  var cvClose = document.getElementById('cvClose');
+  if (cvClose && cvModal) {
+    cvClose.addEventListener('click', function () { cvModal.hidden = true; });
+  }
+  if (cvModal) {
+    cvModal.addEventListener('click', function (e) {
+      if (e.target === cvModal) cvModal.hidden = true;
     });
   }
 
