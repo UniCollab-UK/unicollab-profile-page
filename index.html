@@ -348,14 +348,14 @@ h2{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
       ? '<div class="card"><h2>Skills</h2>'
         + skillGroups.map(function (g, gi) {
             var labelHtml = g.category
-              ? '<button type="button" class="gl" id="glBtn' + gi + '" aria-expanded="true" onclick="toggleSkillGroup(' + gi + ')">'
+              ? '<button type="button" class="gl" id="glBtn' + gi + '" aria-expanded="false" onclick="toggleSkillGroup(' + gi + ')">'
                 + '<span>' + esc(g.category) + '</span>'
                 + '<svg class="gl-chevron" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>'
                 + '</button>'
               : '';
             return '<div class="skill-group">'
               + labelHtml
-              + '<div class="chips" id="skillChips' + gi + '">' + g.skills.map(function (s) { return '<span class="chip">' + esc(s) + '</span>'; }).join('') + '</div>'
+              + '<div class="chips"' + (g.category ? ' hidden' : '') + ' id="skillChips' + gi + '">' + g.skills.map(function (s) { return '<span class="chip">' + esc(s) + '</span>'; }).join('') + '</div>'
               + '</div>';
           }).join('')
         + '</div>'
