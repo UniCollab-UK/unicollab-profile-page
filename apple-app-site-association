@@ -4,7 +4,12 @@
     "details": [
       {
         "appID": "39Q834H6G8.com.unicollab.app",
-        "paths": ["/index.html*", "/project.html*", "/post.html*"]
+        "paths": [
+          "/profile.html*",
+          "/index.html*",
+          "/project.html*",
+          "/post.html*"
+        ]
       }
     ]
   }
